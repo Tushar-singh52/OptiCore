@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OptiCore - DSA Timetable Engine</title>
+    <!-- Google Fonts for Modern Typography -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- html2pdf for export functionality -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="app">
+        
+        <!-- Authentication View -->
+        <section id="login-view" class="view flex-center active">
+            <div class="glass-card login-box">
+                <div class="brand">
+                    <div class="logo-orb pulse"></div>
+                    <h1>OptiCore</h1>
+                    <p>Powered by Python DSA</p>
+                </div>
+                
+                <form id="auth-form">
+                    <div class="form-group">
+                        <label>Login As...</label>
+                        <select id="role-select">
+                            <option value="admin">Administrator</option>
+                            <option value="teacher">Teacher (View Limits)</option>
+                            <option value="student">Student (Class View)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Access ID</label>
+                        <input type="text" id="access-id" value="admin123" required>
+                    </div>
+                    <button type="submit" class="btn primary-btn w-full">Access Portal</button>
+                </form>
+            </div>
+        </section>
+
+        <!-- Main Dashboard View -->
+        <section id="dashboard-view" class="view layout-grid">
+            <aside class="sidebar glass-panel">
+                <div class="sidebar-header">
+                    <h2>OptiCore Engine</h2>
+                    <span class="badge" id="role-badge">Admin</span>
+                </div>
+                <nav class="sidebar-nav">
+                    <ul>
+                        <li class="active"><a href="#" id="nav-timetable">Timetable View</a></li>
+                        <li class="admin-only"><a href="#" id="nav-input">Data Entry</a></li>
+                        <li><a href="#" id="act-logout" class="danger-text">Sign Out</a></li>
+                    </ul>
+                </nav>
+            </aside>
+
+            <main class="main-content">
+                <header class="top-bar">
+                    <div class="title-area">
+                        <h1 id="page-title">Schedule Visualizer</h1>
+                        <p id="page-subtitle">Graph colored and Heap-prioritized allocations.</p>
+                    </div>
+                    <div class="actions">
+                        <button class="btn primary-btn admin-only" id="act-generate" style="display:none;">Generate Strategy</button>
+                        <button class="btn secondary-btn admin-only" id="export-btn">Export PDF</button>
+                    </div>
+                </header>
+
+                <!-- Data Entry Panel (Admin Only) -->
+                <div id="input-panel" class="input-panel glass-panel hidden">
+                    <div class="forms-container">
+                        <!-- Add Teacher -->
+                        <div class="entry-box glass-card">
+                            <h3>Add Teacher</h3>
+                            <form id="form-teacher">
+                                <input type="text" id="t-id" placeholder="Teacher ID (e.g., T1)" required>
+                                <input type="text" id="t-name" placeholder="Name" required>
+                                <input type="number" id="t-hours" placeholder="Max Hours/Day" required min="1">
+                                <button type="submit" class="btn secondary-btn w-full">Add</button>
+                            </form>
+                        </div>
+
+                        <!-- Add Room -->
+                        <div class="entry-box glass-card">
+                            <h3>Add Room</h3>
+                            <form id="form-room">
+                                <input type="text" id="r-id" placeholder="Room ID (e.g., R1)" required>
+                                <input type="text" id="r-name" placeholder="Name" required>
+                                <input type="number" id="r-cap" placeholder="Capacity" required min="1">
+                                <button type="submit" class="btn secondary-btn w-full">Add</button>
+                            </form>
+                        </div>
+
+                        <!-- Add Section -->
+                        <div class="entry-box glass-card">
+                            <h3>Add Section</h3>
+                            <form id="form-section">
+                                <input type="text" id="sec-id" placeholder="Section ID (e.g., SEC-A)" required>
+                                <input type="text" id="sec-name" placeholder="Name" required>
+                                <input type="text" id="sec-dept" placeholder="Department" required>
+                                <input type="number" id="sec-year" placeholder="Year" required min="1">
+                                <input type="number" id="sec-str" placeholder="Strength" required min="1">
+                                <button type="submit" class="btn secondary-btn w-full">Add</button>
+                            </form>
+                        </div>
+
+                        <!-- Add Subject -->
+                        <div class="entry-box glass-card">
+                            <h3>Add Subject</h3>
+                            <form id="form-subject">
+                                <input type="text" id="sub-id" placeholder="Code (e.g., DSA)" required>
+                                <input type="text" id="sub-name" placeholder="Subject Name" required>
+                                <select id="sub-teacher" required><option value="">Select Teacher</option></select>
+                                <input type="number" id="sub-lec" placeholder="Lectures / Week" required min="1">
+                                <label style="display: flex; gap: 0.5rem; align-items: center; color: var(--text-muted); font-size: 0.9rem;">
+                                    <input type="checkbox" id="sub-placement"> Placement Priority
+                                </label>
+                                <button type="submit" class="btn secondary-btn w-full">Add</button>
+                            </form>
+                        </div>
+                    </div>
+                    
+                    <div class="data-lists">
+                        <div class="list-col"><h4>Teachers</h4><ul id="list-teachers"></ul></div>
+                        <div class="list-col"><h4>Rooms</h4><ul id="list-rooms"></ul></div>
+                        <div class="list-col"><h4>Sections</h4><ul id="list-sections"></ul></div>
+                        <div class="list-col"><h4>Subjects</h4><ul id="list-subjects"></ul></div>
+                    </div>
+                </div>
+
+                <!-- Timetable Panel -->
+                <div id="timetable-wrapper" class="timetable-wrapper glass-panel">
+                    <div id="loader" class="loader-overlay hidden flex-center">
+                        <div class="spinner"></div>
+                        <p>Running Constraint Graph...</p>
+                    </div>
+
+                    <div id="grid-container" class="grid-container">
+                        <!-- Dynamic Grid injected by JS -->
+                        <div class="empty-state">
+                            <h3>No Schedule Generated</h3>
+                            <p>Fill out the data in the Input Panel, then "Generate Strategy".</p>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </section>
+        
+        <!-- Smart Swap Modal -->
+        <div id="swap-modal" class="modal hidden">
+            <div class="modal-card glass-card">
+                <h3>Resolve Conflict / Swap Slot</h3>
+                <p>The Python <code>conflict_resolver</code> will validate cross-dependencies using HashMap tracking.</p>
+                
+                <form id="swap-form">
+                    <input type="hidden" id="edit-lec-id">
+                    
+                    <div class="form-group">
+                        <label>Target Day</label>
+                        <select id="edit-day">
+                            <option value="0">Monday</option>
+                            <option value="1">Tuesday</option>
+                            <option value="2">Wednesday</option>
+                            <option value="3">Thursday</option>
+                            <option value="4">Friday</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Target Slot</label>
+                        <select id="edit-slot">
+                            <option value="0">8:00 AM</option>
+                            <option value="1">9:00 AM</option>
+                            <option value="2">10:00 AM</option>
+                            <option value="3">11:00 AM</option>
+                            <option value="4">1:00 PM</option>
+                            <option value="5">2:00 PM</option>
+                            <option value="6">3:00 PM</option>
+                            <option value="7">4:00 PM</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Target Room</label>
+                        <select id="edit-room"></select>
+                    </div>
+                    
+                    <div class="modal-footer">
+                        <button type="button" class="btn text-btn" id="close-modal">Cancel</button>
+                        <button type="submit" class="btn primary-btn">Attempt Smart Swap</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div id="toast-hub"></div>
+    </div>
+    <script src="app.js"></script>
+</body>
+</html>
