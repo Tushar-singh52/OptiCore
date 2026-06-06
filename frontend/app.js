@@ -14,7 +14,7 @@ const INPUT_DATA = {
     subjects: []
 };
 
-const API_BASE = 'https://opticore-gq46.onrender.com';
+const API_BASE = 'http://localhost:8001';
 
 // ====== DOM Elements ======
 const authForm = document.getElementById('auth-form');
