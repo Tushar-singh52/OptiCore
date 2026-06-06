@@ -14,7 +14,7 @@ const INPUT_DATA = {
     subjects: []
 };
 
-const API_BASE = 'http://localhost:8001';
+const API_BASE = ' https://opticore-7.onrender.com';
 
 // ====== DOM Elements ======
 const authForm = document.getElementById('auth-form');
